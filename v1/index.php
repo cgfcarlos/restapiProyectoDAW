@@ -4,7 +4,7 @@ header("Access-Control-Allow-Origin: *");
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
 header("Access-Control-Allow-Headers: X-Requested-With");
-header('Content-Type: text/html; charset=utf-8');
+header('Content-Type: application/json; charset=utf-8');
 header('P3P: CP="IDC DSP COR CURa ADMa OUR IND PHY ONL COM STA"');
 
 include_once '../include/Config.php';
@@ -40,7 +40,7 @@ $app->post('/products', 'authenticate', function() use ($app) {
     $response = array();
     $db = new DBController();
 
-    $body = $app->request()->getBody;
+    $body = json_decode($app->request()->getBody(), true);
 
     if(isset($body["titulo"]) && isset($body["precio"]) && isset($body["categoria"]) && isset($body["imgproducto"])){
         $query = "INSERT INTO productos (titulo, precio, categoria, imgproducto) VALUES ('".$body['titulo']."', ".$body['precio'].", ".$body['categoria'].",'".$body['imgproducto']."')";
@@ -257,7 +257,7 @@ $app->post('/orders', 'authenticate', function() use ($app) {
     verifyRequiredParams(array('fechapedido','usuarioid','direccion1','ciudad','nombredestinatario'));
 
     $response = array();
-	$body = $app->request()->getBody();
+	$body = json_decode($app->request()->getBody(), true);
 
     $db = new DBController();
 
@@ -345,19 +345,7 @@ $app->post('/login', function() use ($app) {
     $response = array();
     $db = new DBController();
 	
-	$body = $app->request()->getBody();
-	
-    verifyRequiredParams(array('name', 'email', 'password'));
-
-    $query = "INSERT INTO users (oauth_provider, oauth_uid, first_name, email, picture, token, id_token, password)
-    VALUES ('null','null','".$body["name"]."','".$body["email"]."','null','null','null','".md5($body["password"], true)."')";
-});
-
-$app->post('/login', function() use ($app) {
-    $response = array();
-    $db = new DBController();
-	
-	$body = $app->request()->getBody();
+	$body = json_decode($app->request->getBody(), true);
 
     verifyRequiredParams(array('provider', 'id', 'name', 'email', 'image', 'token', 'idToken'));
 
@@ -413,7 +401,7 @@ $app->post('/logout', function() use ($app) {
 
     $db = new DBController();
 	
-	$body = $app->request()->getBody();
+	$body = json_decode($app->request()->getBody(), true);
 
     //verifyRequiredParams(array('id'));
 
