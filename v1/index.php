@@ -40,10 +40,10 @@ $app->post('/products', 'authenticate', function() use ($app) {
     $response = array();
     $db = new DBController();
 
-    $request = $app->request();
+    $body = $app->request()->getBody;
 
-    if(isset($_POST["titulo"]) && isset($_POST["precio"]) && isset($_POST["categoria"]) && isset($_POST["imgproducto"])){
-        $query = "INSERT INTO productos (titulo, precio, categoria, imgproducto) VALUES ('".$_POST['titulo']."', ".$_POST['precio'].", ".$_POST['categoria'].",'".$_POST['imgproducto']."')";
+    if(isset($body["titulo"]) && isset($body["precio"]) && isset($body["categoria"]) && isset($body["imgproducto"])){
+        $query = "INSERT INTO productos (titulo, precio, categoria, imgproducto) VALUES ('".$body['titulo']."', ".$body['precio'].", ".$body['categoria'].",'".$body['imgproducto']."')";
 
         $db->query($query);
         $db->execute();
@@ -51,7 +51,7 @@ $app->post('/products', 'authenticate', function() use ($app) {
         $lastInsertId = $db->lastInsertId();
 
         if(isset($lastInsertId)) {
-            $response["product"] = $_POST;
+            $response["product"] = $body;
             $response["error"] = false;
             $response["message"] = "Producto añadido correctamente";
 
@@ -203,7 +203,7 @@ $app->get('/orders', function() {
 
     $db = new DBController();
 
-    if(!isset($_POST["userId"])){
+    if(!isset($body["userId"])){
         $query = "SELECT * FROM pedidos";
 
         $db->query($query);
@@ -215,7 +215,7 @@ $app->get('/orders', function() {
 
         echoResponse(200, $response);
     } else {
-        $query = "SELECT * FROM pedidos WHERE usuarioid = ".$_POST["userId"];
+        $query = "SELECT * FROM pedidos WHERE usuarioid = ".$body["userId"];
 
         $db->query($query);
         $orders = $db->resultset();
@@ -257,13 +257,14 @@ $app->post('/orders', 'authenticate', function() use ($app) {
     verifyRequiredParams(array('fechapedido','usuarioid','direccion1','ciudad','nombredestinatario'));
 
     $response = array();
+	$body = $app->request()->getBody();
 
     $db = new DBController();
 
-    if(isset($_POST["fechapedido"]) && isset($_POST["usuarioid"]) && isset($_POST["direccion1"]) && isset($_POST["ciudad"]) && isset($_POST["nombredestinatario"])) {
+    if(isset($body["fechapedido"]) && isset($body["usuarioid"]) && isset($body["direccion1"]) && isset($body["ciudad"]) && isset($body["nombredestinatario"])) {
 
         $query = "INSERT INTO pedidos (fechapedido, usuarioid, direccion1, direccion2, ciudad, nombredestinatario) 
-        VALUES ('".$_POST["fechapedido"]."',".intval($_POST["usuarioid"]).",'".$_POST["direccion1"]."','".$_POST["direccion2"]."','".$_POST["ciudad"]."','".$_POST["nombredestinatario"]."')";
+        VALUES ('".$body["fechapedido"]."',".intval($body["usuarioid"]).",'".$body["direccion1"]."','".$body["direccion2"]."','".$body["ciudad"]."','".$body["nombredestinatario"]."')";
 
         $db->query($query);
         $db->execute();
@@ -271,7 +272,7 @@ $app->post('/orders', 'authenticate', function() use ($app) {
         $idPedido = $db->lastInsertId();
 
         // $db->beginTransaction();
-        // foreach($_POST['items'] as $items) {
+        // foreach($body['items'] as $items) {
         //     $query = "INSERT INTO lineapedido (idventa, idproducto, unidades)
         //     VALUES (".$idPedido.",".$items["id"].",".$items["cantidad"].")";
         //     $db->query($query);
@@ -280,7 +281,7 @@ $app->post('/orders', 'authenticate', function() use ($app) {
         // $db->endTransaction();
 
         if(isset($idPedido)) {
-            $response["order"] = $_POST;
+            $response["order"] = $body;
             $response["error"] = false;
             $response["message"] = "Pedido realizado correctamente";
             
@@ -343,19 +344,24 @@ $app->get('/users/:id', function($id) {
 $app->post('/login', function() use ($app) {
     $response = array();
     $db = new DBController();
+	
+	$body = $app->request()->getBody();
+	
     verifyRequiredParams(array('name', 'email', 'password'));
 
     $query = "INSERT INTO users (oauth_provider, oauth_uid, first_name, email, picture, token, id_token, password)
-    VALUES ('null','null','".$_POST["name"]."','".$_POST["email"]."','null','null','null','".md5($_POST["password"], true)."')";
+    VALUES ('null','null','".$body["name"]."','".$body["email"]."','null','null','null','".md5($body["password"], true)."')";
 });
 
 $app->post('/login', function() use ($app) {
     $response = array();
     $db = new DBController();
+	
+	$body = $app->request()->getBody();
 
     verifyRequiredParams(array('provider', 'id', 'name', 'email', 'image', 'token', 'idToken'));
 
-    $queryCheck = "SELECT * FROM users WHERE oauth_uid = '".$_POST['id']."'";
+    $queryCheck = "SELECT * FROM users WHERE oauth_uid = '".$body['id']."'";
 
     $db->query($queryCheck);
     $user = $db->single();
@@ -363,38 +369,38 @@ $app->post('/login', function() use ($app) {
 
     if($rows === 0){
         $query = "INSERT INTO users (oauth_provider, oauth_uid, first_name, email, picture, token, id_token)
-        VALUES ('".$_POST['provider']."', '".$_POST['id']."', '".$_POST['name']."', '".$_POST['email']."', '".$_POST['image']."', '".$_POST["token"]."', '".$_POST['idToken']."')";
+        VALUES ('".$body['provider']."', '".$body['id']."', '".$body['name']."', '".$body['email']."', '".$body['image']."', '".$body["token"]."', '".$body['idToken']."')";
 
         $db->query($query);
         $db->execute();
         $id = $db->lastInsertId();
 
-        $query = "SELECT * FROM users WHERE oauth_uid LIKE '".$_POST['id']."'";
+        $query = "SELECT * FROM users WHERE oauth_uid LIKE '".$body['id']."'";
         $db->query($query);
         $user = $db->single();
 
         if(isset($id)){
             $response["error"] = false;
             $response["message"] = "Usuario registrado en la BD";
-            $response["user"] = $_POST;
+            $response["user"] = $body;
 
             echoResponse(200, $response);
         } else {
             $response["error"] = true;
             $response["message"] = "Ha ocurrido un error al registrar el usuario";
-            $response["input"] = $_POST;
+            $response["input"] = $body;
 
             echoResponse(400, $response);
         }
     } else {
-        $query = "UPDATE users SET token = '".$_POST['token']."', id_token = '".$_POST['idToken']."' WHERE oauth_uid = '".$_POST['id']."'";
+        $query = "UPDATE users SET token = '".$body['token']."', id_token = '".$body['idToken']."' WHERE oauth_uid = '".$body['id']."'";
         
         $db->query($query);
         $db->execute();
         $rows = $db->rowCount();
 
         $response["error"] = false;
-        $response["user"] = $_POST;
+        $response["user"] = $body;
         $response["message"] = "Usuario obtenido de la BD";
         $response["updated"] = $rows;
 
@@ -406,17 +412,19 @@ $app->post('/logout', function() use ($app) {
     $response = array();
 
     $db = new DBController();
+	
+	$body = $app->request()->getBody();
 
     //verifyRequiredParams(array('id'));
 
-    $queryCheck = "SELECT * FROM users WHERE oauth_uid = '".$_POST['id']."'";
+    $queryCheck = "SELECT * FROM users WHERE oauth_uid = '".$body['id']."'";
 
     $db->query($queryCheck);
     $user = $db->single();
     $rows = $db->rowCount();
 
     if($rows === 1) {
-        $query = "UPDATE users SET token = NULL, id_token = NULL WHERE oauth_uid = '".$_POST['id']."'";
+        $query = "UPDATE users SET token = NULL, id_token = NULL WHERE oauth_uid = '".$body['id']."'";
         $db->query($query);
         $db->execute();
         $rows = $db->rowCount();
